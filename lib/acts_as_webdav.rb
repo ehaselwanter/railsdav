@@ -13,34 +13,13 @@
 # A controller:
 #
 #   class WebDavController < ApplicationController
-#     #skip_before_filter :verify_authenticity_token
+#     skip_before_filter :verify_authenticity_token
 #     acts_as_webdav
-#   
-#     private
-#   
-#     def find_resource_by_path(path)
-#       href = url_for(:only_path => true, :path_info => params[:path_info])
-#       WebdavResource.initialize_by_path_and_href(path, href)
-#     end
-#   
-#     def mkcol_for_path(path)
-#       WebdavResource.mkcol_for_path(path)
-#     end
-#   
-#     def move_to_path(resource, dest_path, depth)
-#       WebdavResource.move_to_path(resource, dest_path, depth)
-#     end
-#   
-#     def write_content_to_path(path, content)
-#       WebdavResource.write_content_to_path(path, content)
-#     end
 #   end
 #
 # the controller must then have a route like:
 #
 #   ActionController::Routing::Routes.draw do |map|
-#     # See how all your routes lay out with "rake routes"
-#   
 #     map.connect 'home/*path_info', :controller  => 'web_dav', :action => 'webdav'
 #     map.root :controller  => 'web_dav', :action => 'webdav'
 #   end
@@ -67,7 +46,9 @@ module Railsdav
         def acts_as_webdav(options = {})
           class_inheritable_accessor :dav_actions
           class_inheritable_accessor :dav_versions
+          class_inheritable_accessor :resource_model
           
+          self.resource_model = options[:resource_model]
           options[:extra_actions]      ||= []
           options[:extra_dav_versions] ||= []
           self.dav_actions = ACTIONS + options[:extra_actions]
@@ -215,34 +196,38 @@ module Railsdav
           render :nothing => true, :status => 200
         end
 
-        protected
+        private
 
-        # To be overidden by implementing controller
-        # if they are not overidden it raises a ForbiddenError for the client
-        # so a controller only needs to implement the methods it will support
+        #
+        # These are default implementations
+        # If you do not want to implement one of them, dont put
+        # the corresponding HTTP method in ACCEPTED_HTTP_METHODS
+        #
+
         def mkcol_for_path(path)
-          logger.debug "mkcol_for_path: not implemented!"
-          raise ForbiddenError
-        end
-
-        def write_content_to_path(path, content)
-          logger.debug "write_content_to_path: not implemented!"
-          raise ForbiddenError
-        end
-
-        def copy_to_path(resource, dest_path, depth)
-          logger.debug "copy_to_path: not implemented!"
-          raise ForbiddenError
+          raise ForbiddenError unless resource_model
+          resource_model.mkcol_for_path(path)
         end
 
         def move_to_path(resource, dest_path, depth)
-          logger.debug "move_to_path: not implemented!"
-          raise ForbiddenError
+          raise ForbiddenError unless resource_model
+          resource_model.move_to_path(resource, dest_path, depth)
+        end
+
+        def write_content_to_path(path, content)
+          raise ForbiddenError unless resource_model
+          resource_model.write_content_to_path(path, content)
+        end
+
+        def copy_to_path(resource, dest_path, depth)
+          raise ForbiddenError unless resource_model
+          resource_model.copy_to_path(path, content)
         end
 
         def find_resource_by_path(path)
-          logger.debug "find_resource_by_path: not implemented!"
-          raise ForbiddenError
+          raise ForbiddenError unless resource_model
+          href = url_for(:only_path => true, :path_info => params[:path_info])
+          resource_model.initialize_by_path_and_href(path, href)
         end
 
         def overwrite_destination?
