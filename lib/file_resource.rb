@@ -1,9 +1,11 @@
 # Copyright (c) 2006 Stuart Eccles
 # Released under the MIT License.  See the LICENSE file for more details.
 
-# The base_dir parameter can be a string for a directory or a symbol for a method which is run for every request allowing the base directory to be changed based on the request
+# The base_dir parameter can be a string for a directory or a symbol for a method which is run for every 
+# request allowing the base directory to be changed based on the request
 #
-# If the parameter :absolute = true the :base_dir setting will be treated as an absolute path, otherwise the it will be taken as a directory underneath the RAILS_ROOT
+# If the parameter :absolute = true the :base_dir setting will be treated as an absolute path, otherwise 
+# the it will be taken as a directory underneath the RAILS_ROOT
 #
 
 require 'shared-mime-info'
@@ -20,8 +22,8 @@ module Railsdav
     class_inheritable_accessor :file_options
 
     self.file_options = {
-      :base_dir => 'public',
-      :base_url => 'home',
+      :base_dir => Funkenrailsdav.base_dir,
+      :base_url => '',
       :absolute_path => false,
       :max_propfind_depth => 1
     }
@@ -124,8 +126,8 @@ module Railsdav
       end
     end 
 
-    def self.write_content_to_path(path, content)
-      file_path = sanitized_path(path)
+    def self.write_content_to_path(path, content)    
+      file_path = sanitized_path(path)  
       do_file_action do
         File.open(file_path, "wb") {|f| f.write(content) }
       end
@@ -153,7 +155,7 @@ module Railsdav
       end
       # TODO more work on the santized
       file_root = file_options[:base_dir].is_a?(Symbol) ? send(file_options[:base_dir]) : file_options[:base_dir]
-      file_root = File.join(RAILS_ROOT, file_root) unless file_options[:absolute_path]
+      file_root = File.join(Rails.root, file_root) unless file_options[:absolute_path]
       path = File.expand_path(File.join(file_root, file_path))
 
       # Deny paths that dont include the original path

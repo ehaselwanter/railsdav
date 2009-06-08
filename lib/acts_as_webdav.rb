@@ -138,7 +138,7 @@ module Railsdav
         end
 
         def webdav_put
-          write_content_to_path(@path_info, request.raw_post)
+          write_content_to_path(@path_info, request.raw_post)      
           render :nothing => true, :status => 201
         end
 
@@ -180,9 +180,14 @@ module Railsdav
           raise NotFoundError unless resource
           data_to_send = resource.data 
           raise NotFoundError if data_to_send.blank?
-
+          
+          # Hack by funkensturm. to allow the root URL to respond to webdav requests
+          raise NotFoundError if File.expand_path(data_to_send.path) == File.join(Rails.root, resource.file_options[:base_dir])
+          # Hack end
+          
           response.headers["Last-Modified"] = resource.getlastmodified
-          if data_to_send.kind_of?(File)
+          if data_to_send.kind_of?(File) 
+            raise File.expand_path(data_to_send.path)
             send_file File.expand_path(data_to_send.path), :filename => resource.displayname, :stream => true
           else
             send_data data_to_send, :filename => resource.displayname
