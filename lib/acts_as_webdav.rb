@@ -187,7 +187,6 @@ module Railsdav
           
           response.headers["Last-Modified"] = resource.getlastmodified
           if data_to_send.kind_of?(File) 
-            raise File.expand_path(data_to_send.path)
             send_file File.expand_path(data_to_send.path), :filename => resource.displayname, :stream => true
           else
             send_data data_to_send, :filename => resource.displayname
